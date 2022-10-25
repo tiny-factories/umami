@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { FormattedMessage } from 'react-intl';
-import { useSelector } from 'react-redux';
 import classNames from 'classnames';
 import Link from 'components/common/Link';
 import Table from 'components/common/Table';
 import Button from 'components/common/Button';
+import OverflowText from 'components/common/OverflowText';
 import PageHeader from 'components/layout/PageHeader';
 import Modal from 'components/common/Modal';
 import WebsiteEditForm from 'components/forms/WebsiteEditForm';
@@ -23,10 +23,11 @@ import Plus from 'assets/plus.svg';
 import Code from 'assets/code.svg';
 import LinkIcon from 'assets/link.svg';
 import useFetch from 'hooks/useFetch';
+import useUser from 'hooks/useUser';
 import styles from './WebsiteSettings.module.css';
 
 export default function WebsiteSettings() {
-  const user = useSelector(state => state.user);
+  const { user } = useUser();
   const [editWebsite, setEditWebsite] = useState();
   const [resetWebsite, setResetWebsite] = useState();
   const [deleteWebsite, setDeleteWebsite] = useState();
@@ -35,18 +36,17 @@ export default function WebsiteSettings() {
   const [showUrl, setShowUrl] = useState();
   const [saved, setSaved] = useState(0);
   const [message, setMessage] = useState();
-  const { data } = useFetch(`/api/websites` + (user.is_admin ? '?include_all=true' : ''), {}, [
-    saved,
-  ]);
+
+  const { data } = useFetch('/websites', { params: { include_all: !!user?.isAdmin } }, [saved]);
 
   const Buttons = row => (
     <ButtonLayout align="right">
-      {row.share_id && (
+      {row.shareId && (
         <Button
           icon={<LinkIcon />}
           size="small"
           tooltip={<FormattedMessage id="message.get-share-url" defaultMessage="Get share URL" />}
-          tooltipId={`button-share-${row.website_id}`}
+          tooltipId={`button-share-${row.websiteUuid}`}
           onClick={() => setShowUrl(row)}
         />
       )}
@@ -56,56 +56,65 @@ export default function WebsiteSettings() {
         tooltip={
           <FormattedMessage id="message.get-tracking-code" defaultMessage="Get tracking code" />
         }
-        tooltipId={`button-code-${row.website_id}`}
+        tooltipId={`button-code-${row.websiteUuid}`}
         onClick={() => setShowCode(row)}
       />
       <Button
         icon={<Pen />}
         size="small"
         tooltip={<FormattedMessage id="label.edit" defaultMessage="Edit" />}
-        tooltipId={`button-edit-${row.website_id}`}
+        tooltipId={`button-edit-${row.websiteUuid}`}
         onClick={() => setEditWebsite(row)}
       />
       <Button
         icon={<Reset />}
         size="small"
         tooltip={<FormattedMessage id="label.reset" defaultMessage="Reset" />}
-        tooltipId={`button-reset-${row.website_id}`}
+        tooltipId={`button-reset-${row.websiteUuid}`}
         onClick={() => setResetWebsite(row)}
       />
       <Button
         icon={<Trash />}
         size="small"
         tooltip={<FormattedMessage id="label.delete" defaultMessage="Delete" />}
-        tooltipId={`button-delete-${row.website_id}`}
+        tooltipId={`button-delete-${row.websiteUuid}`}
         onClick={() => setDeleteWebsite(row)}
       />
     </ButtonLayout>
   );
 
-  const DetailsLink = ({ website_id, name, domain }) => (
-    <Link href="/website/[...id]" as={`/website/${website_id}/${name}`}>
+  const DetailsLink = ({ websiteUuid, name, domain }) => (
+    <Link
+      className={styles.detailLink}
+      href="/websites/[...id]"
+      as={`/websites/${websiteUuid}/${name}`}
+    >
       <Favicon domain={domain} />
-      {name}
+      <OverflowText tooltipId={`${websiteUuid}-name`}>{name}</OverflowText>
     </Link>
+  );
+
+  const Domain = ({ domain, websiteUuid }) => (
+    <OverflowText tooltipId={`${websiteUuid}-domain`}>{domain}</OverflowText>
   );
 
   const adminColumns = [
     {
       key: 'name',
       label: <FormattedMessage id="label.name" defaultMessage="Name" />,
-      className: 'col-4 col-xl-3',
+      className: 'col-12 col-lg-4 col-xl-3',
       render: DetailsLink,
     },
     {
       key: 'domain',
       label: <FormattedMessage id="label.domain" defaultMessage="Domain" />,
-      className: 'col-4 col-xl-3',
+      className: 'col-12 col-lg-4 col-xl-3',
+      render: Domain,
     },
     {
       key: 'account',
       label: <FormattedMessage id="label.owner" defaultMessage="Owner" />,
-      className: 'col-4 col-xl-1',
+      className: 'col-12 col-lg-4 col-xl-1',
     },
     {
       key: 'action',
@@ -118,13 +127,14 @@ export default function WebsiteSettings() {
     {
       key: 'name',
       label: <FormattedMessage id="label.name" defaultMessage="Name" />,
-      className: 'col-6 col-xl-4',
+      className: 'col-12 col-lg-6 col-xl-4',
       render: DetailsLink,
     },
     {
       key: 'domain',
       label: <FormattedMessage id="label.domain" defaultMessage="Domain" />,
-      className: 'col-6 col-xl-4',
+      className: 'col-12 col-lg-6 col-xl-4',
+      render: Domain,
     },
     {
       key: 'action',
@@ -177,7 +187,7 @@ export default function WebsiteSettings() {
           <FormattedMessage id="label.add-website" defaultMessage="Add website" />
         </Button>
       </PageHeader>
-      <Table columns={user.is_admin ? adminColumns : columns} rows={data} empty={empty} />
+      <Table columns={user.isAdmin ? adminColumns : columns} rows={data} empty={empty} />
       {editWebsite && (
         <Modal title={<FormattedMessage id="label.edit-website" defaultMessage="Edit website" />}>
           <WebsiteEditForm values={editWebsite} onSave={handleSave} onClose={handleClose} />
@@ -193,7 +203,7 @@ export default function WebsiteSettings() {
           title={<FormattedMessage id="label.reset-website" defaultMessage="Reset statistics" />}
         >
           <ResetForm
-            values={{ type: 'website', id: resetWebsite.website_id, name: resetWebsite.name }}
+            values={{ type: 'websites', id: resetWebsite.websiteUuid, name: resetWebsite.name }}
             onSave={handleSave}
             onClose={handleClose}
           />
@@ -204,7 +214,7 @@ export default function WebsiteSettings() {
           title={<FormattedMessage id="label.delete-website" defaultMessage="Delete website" />}
         >
           <DeleteForm
-            values={{ type: 'website', id: deleteWebsite.website_id, name: deleteWebsite.name }}
+            values={{ type: 'websites', id: deleteWebsite.websiteUuid, name: deleteWebsite.name }}
             onSave={handleSave}
             onClose={handleClose}
           />

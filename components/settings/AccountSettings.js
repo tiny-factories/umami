@@ -25,51 +25,52 @@ export default function AccountSettings() {
   const [deleteAccount, setDeleteAccount] = useState();
   const [saved, setSaved] = useState(0);
   const [message, setMessage] = useState();
-  const { data } = useFetch(`/api/accounts`, {}, [saved]);
+  const { data } = useFetch(`/accounts`, {}, [saved]);
 
-  const Checkmark = ({ is_admin }) => (is_admin ? <Icon icon={<Check />} size="medium" /> : null);
+  const Checkmark = ({ isAdmin }) => (isAdmin ? <Icon icon={<Check />} size="medium" /> : null);
 
   const DashboardLink = row => (
-    <Link href={`/dashboard/${row.user_id}/${row.username}`}>
+    <Link href={`/dashboard/${row.userId}/${row.username}`}>
       <a>
         <Icon icon={<LinkIcon />} />
       </a>
     </Link>
   );
 
-  const Buttons = row =>
-    row.username !== 'admin' ? (
-      <ButtonLayout align="right">
-        <Button icon={<Pen />} size="small" onClick={() => setEditAccount(row)}>
-          <FormattedMessage id="label.edit" defaultMessage="Edit" />
-        </Button>
+  const Buttons = row => (
+    <ButtonLayout align="right">
+      <Button icon={<Pen />} size="small" onClick={() => setEditAccount(row)}>
+        <FormattedMessage id="label.edit" defaultMessage="Edit" />
+      </Button>
+      {!row.isAdmin && (
         <Button icon={<Trash />} size="small" onClick={() => setDeleteAccount(row)}>
           <FormattedMessage id="label.delete" defaultMessage="Delete" />
         </Button>
-      </ButtonLayout>
-    ) : null;
+      )}
+    </ButtonLayout>
+  );
 
   const columns = [
     {
       key: 'username',
       label: <FormattedMessage id="label.username" defaultMessage="Username" />,
-      className: 'col-4 col-md-3',
+      className: 'col-12 col-lg-4',
     },
     {
-      key: 'is_admin',
+      key: 'isAdmin',
       label: <FormattedMessage id="label.administrator" defaultMessage="Administrator" />,
-      className: 'col-4 col-md-3',
+      className: 'col-12 col-lg-3',
       render: Checkmark,
     },
     {
       key: 'dashboard',
       label: <FormattedMessage id="label.dashboard" defaultMessage="Dashboard" />,
-      className: 'col-4 col-md-3',
+      className: 'col-12 col-lg-3',
       render: DashboardLink,
     },
     {
       key: 'actions',
-      className: classNames(styles.buttons, 'col-12 col-md-3 pt-2 pt-md-0'),
+      className: classNames(styles.buttons, 'col-12 col-lg-2 pt-2 pt-md-0'),
       render: Buttons,
     },
   ];
@@ -120,7 +121,7 @@ export default function AccountSettings() {
           title={<FormattedMessage id="label.delete-account" defaultMessage="Delete account" />}
         >
           <DeleteForm
-            values={{ type: 'account', id: deleteAccount.user_id, name: deleteAccount.username }}
+            values={{ type: 'accounts', id: deleteAccount.id, name: deleteAccount.username }}
             onSave={handleSave}
             onClose={handleClose}
           />

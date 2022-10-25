@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FormattedMessage } from 'react-intl';
-import { useSelector } from 'react-redux';
 import PageHeader from 'components/layout/PageHeader';
 import Button from 'components/common/Button';
 import Modal from 'components/common/Modal';
@@ -11,12 +10,14 @@ import Dots from 'assets/ellipsis-h.svg';
 import styles from './ProfileSettings.module.css';
 import DateRangeSetting from './DateRangeSetting';
 import useEscapeKey from 'hooks/useEscapeKey';
+import useUser from 'hooks/useUser';
+import LanguageSetting from './LanguageSetting';
+import ThemeSetting from './ThemeSetting';
 
 export default function ProfileSettings() {
-  const user = useSelector(state => state.user);
+  const { user } = useUser();
   const [changePassword, setChangePassword] = useState(false);
-  const [message, setMessage] = useState();
-  const { user_id } = user;
+  const [message, setMessage] = useState(null);
 
   function handleSave() {
     setChangePassword(false);
@@ -26,6 +27,12 @@ export default function ProfileSettings() {
   useEscapeKey(() => {
     setChangePassword(false);
   });
+
+  if (!user) {
+    return null;
+  }
+
+  const { userId, username } = user;
 
   return (
     <>
@@ -41,7 +48,7 @@ export default function ProfileSettings() {
         <dt>
           <FormattedMessage id="label.username" defaultMessage="Username" />
         </dt>
-        <dd>{user.username}</dd>
+        <dd>{username}</dd>
         <dt>
           <FormattedMessage id="label.timezone" defaultMessage="Timezone" />
         </dt>
@@ -54,13 +61,25 @@ export default function ProfileSettings() {
         <dd>
           <DateRangeSetting />
         </dd>
+        <dt>
+          <FormattedMessage id="label.language" defaultMessage="Language" />
+        </dt>
+        <dd>
+          <LanguageSetting />
+        </dd>
+        <dt>
+          <FormattedMessage id="label.theme" defaultMessage="Theme" />
+        </dt>
+        <dd>
+          <ThemeSetting />
+        </dd>
       </dl>
       {changePassword && (
         <Modal
           title={<FormattedMessage id="label.change-password" defaultMessage="Change password" />}
         >
           <ChangePasswordForm
-            values={{ user_id }}
+            values={{ userId }}
             onSave={handleSave}
             onClose={() => setChangePassword(false)}
           />

@@ -10,13 +10,17 @@ import { dateFormat } from 'lib/date';
 import Calendar from 'assets/calendar-alt.svg';
 import Icon from './Icon';
 
-const filterOptions = [
+export const filterOptions = [
   { label: <FormattedMessage id="label.today" defaultMessage="Today" />, value: '1day' },
   {
     label: (
       <FormattedMessage id="label.last-hours" defaultMessage="Last {x} hours" values={{ x: 24 }} />
     ),
     value: '24hour',
+  },
+  {
+    label: <FormattedMessage id="label.yesterday" defaultMessage="Yesterday" />,
+    value: '-1day',
   },
   {
     label: <FormattedMessage id="label.this-week" defaultMessage="This week" />,
@@ -59,7 +63,7 @@ const filterOptions = [
   },
 ];
 
-function DateFilter({ value, startDate, endDate, onChange, className }) {
+function DateFilter({ value, startDate, endDate, onChange, className, options }) {
   const [showPicker, setShowPicker] = useState(false);
   const displayValue =
     value === 'custom' ? (
@@ -86,7 +90,7 @@ function DateFilter({ value, startDate, endDate, onChange, className }) {
       <DropDown
         className={className}
         value={displayValue}
-        options={filterOptions}
+        options={options || filterOptions}
         onChange={handleChange}
       />
       {showPicker && (
