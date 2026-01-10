@@ -1,13 +1,15 @@
 import { z } from 'zod';
-import { hashPassword, canCreateUser } from '@/lib/auth';
 import { ROLES } from '@/lib/constants';
 import { uuid } from '@/lib/crypto';
+import { hashPassword } from '@/lib/password';
 import { parseRequest } from '@/lib/request';
-import { unauthorized, json, badRequest } from '@/lib/response';
-import { createUser, getUserByUsername } from '@/queries';
+import { badRequest, json, unauthorized } from '@/lib/response';
+import { canCreateUser } from '@/permissions';
+import { createUser, getUserByUsername } from '@/queries/prisma';
 
 export async function POST(request: Request) {
   const schema = z.object({
+    id: z.uuid().optional(),
     username: z.string().max(255),
     password: z.string(),
     role: z.string().regex(/admin|user|view-only/i),
@@ -23,16 +25,16 @@ export async function POST(request: Request) {
     return unauthorized();
   }
 
-  const { username, password, role } = body;
+  const { id, username, password, role } = body;
 
   const existingUser = await getUserByUsername(username, { showDeleted: true });
 
   if (existingUser) {
-    return badRequest('User already exists');
+    return badRequest({ message: 'User already exists' });
   }
 
   const user = await createUser({
-    id: uuid(),
+    id: id || uuid(),
     username,
     password: hashPassword(password),
     role: role ?? ROLES.user,

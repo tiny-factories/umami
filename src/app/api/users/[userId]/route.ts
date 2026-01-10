@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { canUpdateUser, canViewUser, canDeleteUser } from '@/lib/auth';
-import { getUser, getUserByUsername, updateUser, deleteUser } from '@/queries';
-import { json, unauthorized, badRequest, ok } from '@/lib/response';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/password';
 import { parseRequest } from '@/lib/request';
+import { badRequest, json, ok, unauthorized } from '@/lib/response';
+import { userRoleParam } from '@/lib/schema';
+import { canDeleteUser, canUpdateUser, canViewUser } from '@/permissions';
+import { deleteUser, getUser, getUserByUsername, updateUser } from '@/queries/prisma';
 
 export async function GET(request: Request, { params }: { params: Promise<{ userId: string }> }) {
   const { auth, error } = await parseRequest(request);
@@ -25,9 +26,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
 
 export async function POST(request: Request, { params }: { params: Promise<{ userId: string }> }) {
   const schema = z.object({
-    username: z.string().max(255),
-    password: z.string().max(255),
-    role: z.string().regex(/admin|user|view-only/i),
+    username: z.string().max(255).optional(),
+    password: z.string().max(255).optional(),
+    role: userRoleParam.optional(),
   });
 
   const { auth, body, error } = await parseRequest(request, schema);
@@ -66,7 +67,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
     const user = await getUserByUsername(username);
 
     if (user) {
-      return badRequest('User already exists');
+      return badRequest({ message: 'User already exists' });
     }
   }
 
@@ -92,7 +93,7 @@ export async function DELETE(
   }
 
   if (userId === auth.user.id) {
-    return badRequest('You cannot delete yourself.');
+    return badRequest({ message: 'You cannot delete yourself.' });
   }
 
   await deleteUser(userId);
